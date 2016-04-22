@@ -1,0 +1,81 @@
+(ns torque.io.fs
+  (:require
+   [#?(:api/posix torque.io.common.posix
+       :api/win   torque.io.common.win
+       ;; default to posix for unknown platforms
+       :default   torque.io.common.posix) :as impl]
+   [torque.string :as str])
+  (:use
+    [torque.io.common.protocols]))
+
+(deftype File [handle]
+  IResource
+  (-dispose [_]
+    (when handle
+      (-dispose handle)))
+  IFile
+  (slurp [_]
+    (let [size   (impl/size handle :resolve-links)
+          buffer (make-binary size)]
+      (when (> 0 size)
+        (impl/read handle size buffer))
+      buffer))
+  IReadable
+  (-read [_ off n buffer]
+    (impl/read handle off n buffer))
+  AsFile
+  (as-file [this]
+    this))
+
+(deftype FSPath [segments ^:mutable s]
+
+  IPrintable
+  (-str [this]
+    (when-not s
+      (set! this s (str/join impl/path-delimiter segments)))
+    s)
+
+  IPath
+  (-cd [this sub]
+    (cond
+      (string? sub)
+        (new FSPath (into segments (str/split sub impl/path-delimiter)) nil)
+      (instance? FSPath sub)
+        (new FSPath (into segments (. sub segments)) nil)
+      (seqable? sub)
+        (reduce -cd this sub)
+      :else (-cd this (str sub))))
+  (-up [_]
+   ;; (new FSPath (pop segments) nil)
+    ))
+
+(defn path
+  "Create a new path object with a base path. Call with no args for
+   an empty path."
+  ([]
+   (new FSPath [] nil))
+  ([path]
+   (new FSPath (into [] (str/split path impl/path-delimiter)) nil)))
+
+(defn cd
+  "Change a path by appending new path segments"
+  ([path]
+    path)
+  ([path sub]
+    (-cd path sub))
+  ([path sub & subs]
+    (-cd (-cd path sub) subs)))
+
+(defn up
+  "Drop the right most path segment"
+  [path]
+  (-up path))
+
+(defn exists? [path]
+  (impl/exists? (str path)))
+
+(defn open [path access & flags]
+  (new File (impl/open (str path) access flags)))
+
+(defn readdir [path]
+  (impl/readdir path))

@@ -1,0 +1,9 @@
+(ns torque.io.common.types)
+
+(deftype DirectoryEntry [type name])
+
+(defn entry-type [d]
+  (. d type))
+
+(defn entry-name [d]
+  (. d name))

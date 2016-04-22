@@ -1,0 +1,23 @@
+(ns torque.io
+  (:require [torque.io.common.protocols :as p]))
+
+(defn buffered
+  "Returns a lazy sequence of buffers, each containing width
+   bytes (unless end of stream is reaached, in which case the
+   buffer may be shorter)."
+  ([readable width]
+   (buffered readable 0 width))
+  ([readable pos width & opts]
+   (lazy-seq
+     (let [buffer     (make-binary width)
+           bytes-read (p/-read readable pos width buffer)]
+       (if (= bytes-read :eof)
+         (do
+           (when (= (first opts) :close-on-eof)
+             (-dispose readable))
+           nil)
+         (cons
+           (if (< bytes-read width)
+             (subb buffer 0 width)
+             buffer)
+           (buffered readable (+ pos bytes-read) width)))))))

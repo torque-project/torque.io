@@ -1,0 +1,19 @@
+(ns torque.io.common.protocols)
+
+(defprotocol IPath
+  (-cd [_ path])
+  (-up [_]))
+
+(defprotocol IFile
+  (slurp [_]))
+
+(defprotocol AsFile
+  (as-file [_]))
+
+(defprotocol IReadable
+  (-read [_ off n buffer]))
+
+(defprotocol IReadableStream
+  (read-byte [_])
+  (peek-byte [_])
+  (skip [_ n]))
