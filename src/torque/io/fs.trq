@@ -6,7 +6,9 @@
        :default   torque.io.common.posix) :as impl]
    [torque.string :as str])
   (:use
-    [torque.io.common.protocols]))
+    [torque.io.common.protocols])
+  (:inherit
+    [torque.io.common.types]))
 
 (deftype File [handle]
   IResource
@@ -55,21 +57,28 @@
   ([]
    (new FSPath [] nil))
   ([path]
-   (new FSPath (into [] (str/split path impl/path-delimiter)) nil)))
+   (if (instance? FSPath path)
+     path
+     (new FSPath (into [] (str/split path impl/path-delimiter)) nil))))
 
 (defn cd
   "Change a path by appending new path segments"
-  ([path]
-    path)
-  ([path sub]
-    (-cd path sub))
-  ([path sub & subs]
-    (-cd (-cd path sub) subs)))
+  ([p]
+    (path p))
+  ([p sub]
+    (-cd (path p) sub))
+  ([p sub & subs]
+    (-cd (-cd (path p) sub) subs)))
 
 (defn up
   "Drop the right most path segment"
   [path]
   (-up path))
+
+(defn cwd
+  "Get the processes current working directory"
+  []
+  (path (impl/cwd)))
 
 (defn exists? [path]
   (impl/exists? (str path)))
