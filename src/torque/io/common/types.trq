@@ -1,6 +1,9 @@
 (ns torque.io.common.types)
 
-(deftype DirectoryEntry [type name])
+(deftype DirectoryEntry [type name]
+  IPrintable
+  (-str [_]
+    (str "#{DirectoryEntry: \"" name "\", type: " type "}")))
 
 (defn entry-type [d]
   (. d type))
