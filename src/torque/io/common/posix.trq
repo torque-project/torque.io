@@ -25,16 +25,23 @@
      (ffi/defimport -lstat libc __lxstat :sint32 [:sint32 :string :ptr]))
    :os/darwin
    (do
-     (ffi/defimport -stat  libc stat$64 :sint32 [:string :ptr])
-     (ffi/defimport -lstat libc lstat$64 :sint32 [:string :ptr]))
+     (ffi/defimport -stat  libc stat$INODE64 :sint32 [:string :ptr])
+     (ffi/defimport -lstat libc lstat$INODE64 :sint32 [:string :ptr]))
    :default
    (do
      (ffi/defimport -stat  libc stat :sint32 [:string :ptr])
      (ffi/defimport -lstat libc lstat :sint32 [:string :ptr])))
 
-(ffi/defimport -opendir  libc opendir :ptr [:string])
+#?(:os/darwin
+   (do
+     (ffi/defimport -opendir  libc opendir$INODE64 :ptr [:string])
+     (ffi/defimport -readdir  libc readdir$INODE64 :ptr [:ptr]))
+   :default
+   (do
+     (ffi/defimport -opendir  libc opendir :ptr [:string])
+     (ffi/defimport -readdir  libc readdir :ptr [:ptr])))
+
 (ffi/defimport -closedir libc closedir :sint32 [:ptr])
-(ffi/defimport -readdir  libc readdir :ptr [:ptr])
 
 (ffi/defimport -getcwd libc getcwd :ptr [:ptr :uint64])
 
@@ -147,8 +154,8 @@
   (if (string? path)
     (let [stat-fn (fn stat-impl [path p]
                     (if (= (first flags) :resolve-links)
-                      (-lstat 0 path p)
-                      (-stat 0 path p)))
+                      #?(:os/linux (-lstat 0 path p) :default (-stat path p))
+                      #?(:os/linux (-stat 0 path p)  :default (-lstat path p))))
           buffer  (make-binary stat-size)
           ret     (stat-fn path (intptr buffer))]
       (when (zero? ret)
