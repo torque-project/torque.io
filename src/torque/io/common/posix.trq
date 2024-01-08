@@ -25,8 +25,8 @@
      (ffi/defimport -lstat libc __lxstat :sint32 [:sint32 :string :ptr]))
    :os/darwin
    (do
-     (ffi/defimport -stat  libc stat$INODE64 :sint32 [:string :ptr])
-     (ffi/defimport -lstat libc lstat$INODE64 :sint32 [:string :ptr]))
+     (ffi/defimport -stat  libc statx_np :sint32 [:string :ptr])
+     (ffi/defimport -lstat libc lstatx_np :sint32 [:string :ptr]))
    :default
    (do
      (ffi/defimport -stat  libc stat :sint32 [:string :ptr])
@@ -34,8 +34,8 @@
 
 #?(:os/darwin
    (do
-     (ffi/defimport -opendir  libc opendir$INODE64 :ptr [:string])
-     (ffi/defimport -readdir  libc readdir$INODE64 :ptr [:ptr]))
+     (ffi/defimport -opendir  libc opendir :ptr [:string])
+     (ffi/defimport -readdir  libc readdir :ptr [:ptr]))
    :default
    (do
      (ffi/defimport -opendir  libc opendir :ptr [:string])
